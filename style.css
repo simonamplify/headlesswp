@@ -1,0 +1,12 @@
+/*
+Theme Name:  HeadlessWP
+Theme URI:   https://github.com/your-repo/headlesswp
+Description: A headless WordPress theme. All content is served via the REST API. The front end is handled by a decoupled static/JS application. Pages are disabled for non-admin roles; use the Projects CPT for structured content.
+Version:     1.0.0
+Author:      Your Name
+Author URI:  https://amplify-creative.com
+License:     GNU General Public License v2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: headlesswp
+Tags:        headless, rest-api, decoupled
+*/
