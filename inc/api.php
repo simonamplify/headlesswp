@@ -5,9 +5,10 @@
  * Hardens and extends the WordPress REST API for headless use:
  *
  * - Requires authentication on ALL REST requests (read and write) via Application Password.
- * - Disables the /wp/v2/users endpoint (leaks usernames; author data is embedded in responses).
+ * - Disables the /wp/v2/users endpoint (leaks usernames; author data is on each post instead).
  * - Exposes posts, categories, tags, projects, and project-categories to authenticated clients.
  * - Exposes featured image URLs directly on post/project objects.
+ * - Exposes author name, slug, and avatar directly on post/project objects.
  * - Adds ACF field data to REST responses when ACF is active.
  * - Registers a /wp-json/headlesswp/v1/health liveness probe.
  *
@@ -200,7 +201,71 @@ function headlesswp_register_client_logo_url_field(): void {
     );
 }
 
-// ── 5. ACF fields in REST responses (graceful no-op when ACF is absent) ────────
+// ── 5. Author data on post and project REST responses ───────────────────────────
+
+add_action( 'rest_api_init', 'headlesswp_register_author_data_field' );
+
+/**
+ * Add an `author_data` field to post and project REST responses.
+ *
+ * The /wp/v2/users endpoint is intentionally disabled to prevent username
+ * enumeration, so author details are embedded directly here instead.
+ *
+ * Returns: id, name (display name), slug (user_nicename), and avatar_url.
+ */
+function headlesswp_register_author_data_field(): void {
+    foreach ( [ 'post', 'project' ] as $post_type ) {
+        register_rest_field(
+            $post_type,
+            'author_data',
+            [
+                'get_callback'    => 'headlesswp_get_author_data',
+                'update_callback' => null,
+                'schema'          => [
+                    'description' => __( 'Author display name, slug, and avatar.', 'headlesswp' ),
+                    'type'        => 'object',
+                    'context'     => [ 'view', 'edit' ],
+                    'readonly'    => true,
+                    'properties'  => [
+                        'id'         => [ 'type' => 'integer' ],
+                        'name'       => [ 'type' => 'string' ],
+                        'slug'       => [ 'type' => 'string' ],
+                        'avatar_url' => [ 'type' => 'string', 'format' => 'uri' ],
+                    ],
+                ],
+            ]
+        );
+    }
+}
+
+/**
+ * Callback: return display name, slug, and avatar for the post author.
+ *
+ * @param array $post REST post object array.
+ * @return array|null Null if no author is set.
+ */
+function headlesswp_get_author_data( array $post ): ?array {
+    $author_id = (int) ( $post['author'] ?? 0 );
+
+    if ( $author_id <= 0 ) {
+        return null;
+    }
+
+    $user = get_userdata( $author_id );
+
+    if ( ! $user ) {
+        return null;
+    }
+
+    return [
+        'id'         => $author_id,
+        'name'       => $user->display_name,
+        'slug'       => $user->user_nicename,
+        'avatar_url' => get_avatar_url( $author_id, [ 'size' => 96 ] ),
+    ];
+}
+
+// ── 6. ACF fields in REST responses (graceful no-op when ACF is absent) ────────
 
 add_action( 'rest_api_init', 'headlesswp_register_acf_rest_fields' );
 
@@ -232,7 +297,7 @@ function headlesswp_register_acf_rest_fields() {
     );
 }
 
-// ── 6. Health-check endpoint ────────────────────────────────────────────────────
+// ── 7. Health-check endpoint ────────────────────────────────────────────────────
 
 add_action( 'rest_api_init', 'headlesswp_register_health_endpoint' );
 
@@ -272,7 +337,7 @@ function headlesswp_health_check_response(): WP_REST_Response {
     );
 }
 
-// ── 7. Strip namespace and route listing from the REST index ─────────────────
+// ── 8. Strip namespace and route listing from the REST index ─────────────────
 
 add_filter( 'rest_index', 'headlesswp_filter_rest_index' );
 
