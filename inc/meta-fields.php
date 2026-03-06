@@ -23,15 +23,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 /** Available services for the checklist. */
-const HEADLESSWP_SERVICES = [
-    'web_design'    => 'Web Design',
-    'web_dev'       => 'Web Dev',
-    'graphic_design'=> 'Graphic Design',
-    'print'         => 'Print',
-    'ux_research'   => 'UX Research',
-    'wp_dev'        => 'WordPress Dev',
-    'seo'           => 'SEO',
-];
+if ( ! function_exists( 'headlesswp_get_services' ) ) {
+    function headlesswp_get_services(): array {
+        return [
+            'web_design'    => 'Web Design',
+            'web_dev'       => 'Web Dev',
+            'graphic_design'=> 'Graphic Design',
+            'print'         => 'Print',
+            'ux_research'   => 'UX Research',
+            'wp_dev'        => 'WordPress Dev',
+            'seo'           => 'SEO',
+            'consultancy'   => 'Consultancy',
+            'podcast'       => 'Podcast',
+            'multimedia'    => 'Multimedia',
+            'animation'     => 'Animation',
+        ];
+    }
+}
 
 // ── 1. Register meta keys ─────────────────────────────────────────────────────
 
@@ -395,7 +403,7 @@ function headlesswp_render_project_meta_box( WP_Post $post ): void {
         <div class="hwp-field hwp-full">
             <label><?php esc_html_e( 'Services Employed', 'headlesswp' ); ?></label>
             <div class="hwp-services">
-                <?php foreach ( HEADLESSWP_SERVICES as $key => $label ) : ?>
+                <?php foreach ( headlesswp_get_services() as $key => $label ) : ?>
                     <label>
                         <input type="checkbox"
                                name="_project_services[]"
@@ -552,7 +560,7 @@ function headlesswp_save_project_meta( int $post_id, WP_Post $post ): void {
 
         // Validate submitted service keys against the known constant list.
         $submitted_services = (array) ( $_POST['_project_services'] ?? [] );
-        $valid_services     = array_keys( HEADLESSWP_SERVICES );
+        $valid_services     = array_keys( headlesswp_get_services() );
         $clean_services     = array_values(
             array_intersect( $submitted_services, $valid_services )
         );

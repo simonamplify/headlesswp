@@ -9,6 +9,7 @@
  * - Exposes posts, categories, tags, projects, and project-categories to authenticated clients.
  * - Exposes featured image URLs directly on post/project objects.
  * - Exposes author name, slug, and avatar directly on post/project objects.
+ * - Transforms project service keys to human-readable labels in REST responses.
  * - Adds ACF field data to REST responses when ACF is active.
  * - Registers a /wp-json/headlesswp/v1/health liveness probe.
  *
@@ -276,28 +277,21 @@ add_filter( 'rest_prepare_project', 'headlesswp_transform_project_services', 10,
 function headlesswp_transform_project_services( WP_REST_Response $response, WP_Post $post, WP_REST_Request $request ): WP_REST_Response {
     $data = $response->get_data();
     
-    if ( isset( $data['_project_services'] ) && is_array( $data['_project_services'] ) ) {
-        $services = $data['_project_services'];
+    if ( isset( $data['meta']['_project_services'] ) && is_array( $data['meta']['_project_services'] ) ) {
+        $services = $data['meta']['_project_services'];
+        $service_map = function_exists( 'headlesswp_get_services' ) ? headlesswp_get_services() : [];
         $labels = [];
         
-        // Map service keys to labels using the constant from meta-fields.php
-        if ( defined( 'HEADLESSWP_SERVICES' ) ) {
-            foreach ( $services as $service_key ) {
-                if ( isset( HEADLESSWP_SERVICES[ $service_key ] ) ) {
-                    $labels[] = HEADLESSWP_SERVICES[ $service_key ];
-                } else {
-                    // Fallback: convert snake_case to Title Case
-                    $labels[] = ucwords( str_replace( '_', ' ', $service_key ) );
-                }
-            }
-        } else {
-            // Fallback if constant not available
-            foreach ( $services as $service_key ) {
+        foreach ( $services as $service_key ) {
+            if ( isset( $service_map[ $service_key ] ) ) {
+                $labels[] = $service_map[ $service_key ];
+            } else {
+                // Fallback: convert snake_case to Title Case
                 $labels[] = ucwords( str_replace( '_', ' ', $service_key ) );
             }
         }
         
-        $data['_project_services'] = $labels;
+        $data['meta']['_project_services'] = $labels;
         $response->set_data( $data );
     }
     
