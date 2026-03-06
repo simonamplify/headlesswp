@@ -265,7 +265,46 @@ function headlesswp_get_author_data( array $post ): ?array {
     ];
 }
 
-// ── 6. ACF fields in REST responses (graceful no-op when ACF is absent) ────────
+// ── 6. Transform project services to human-readable labels ──────────────────────
+
+add_filter( 'rest_prepare_project', 'headlesswp_transform_project_services', 10, 3 );
+
+/**
+ * Transform the _project_services values from keys (e.g. "web_design")
+ * to human-readable labels (e.g. "Web Design") in the REST response.
+ */
+function headlesswp_transform_project_services( WP_REST_Response $response, WP_Post $post, WP_REST_Request $request ): WP_REST_Response {
+    $data = $response->get_data();
+    
+    if ( isset( $data['_project_services'] ) && is_array( $data['_project_services'] ) ) {
+        $services = $data['_project_services'];
+        $labels = [];
+        
+        // Map service keys to labels using the constant from meta-fields.php
+        if ( defined( 'HEADLESSWP_SERVICES' ) ) {
+            foreach ( $services as $service_key ) {
+                if ( isset( HEADLESSWP_SERVICES[ $service_key ] ) ) {
+                    $labels[] = HEADLESSWP_SERVICES[ $service_key ];
+                } else {
+                    // Fallback: convert snake_case to Title Case
+                    $labels[] = ucwords( str_replace( '_', ' ', $service_key ) );
+                }
+            }
+        } else {
+            // Fallback if constant not available
+            foreach ( $services as $service_key ) {
+                $labels[] = ucwords( str_replace( '_', ' ', $service_key ) );
+            }
+        }
+        
+        $data['_project_services'] = $labels;
+        $response->set_data( $data );
+    }
+    
+    return $response;
+}
+
+// ── 7. ACF fields in REST responses (graceful no-op when ACF is absent) ────────
 
 add_action( 'rest_api_init', 'headlesswp_register_acf_rest_fields' );
 
@@ -297,7 +336,7 @@ function headlesswp_register_acf_rest_fields() {
     );
 }
 
-// ── 7. Health-check endpoint ────────────────────────────────────────────────────
+// ── 8. Health-check endpoint ────────────────────────────────────────────────────
 
 add_action( 'rest_api_init', 'headlesswp_register_health_endpoint' );
 
@@ -337,7 +376,7 @@ function headlesswp_health_check_response(): WP_REST_Response {
     );
 }
 
-// ── 8. Strip namespace and route listing from the REST index ─────────────────
+// ── 9. Strip namespace and route listing from the REST index ─────────────────
 
 add_filter( 'rest_index', 'headlesswp_filter_rest_index' );
 
