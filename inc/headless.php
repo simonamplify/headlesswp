@@ -133,3 +133,18 @@ function headlesswp_theme_setup() {
     add_theme_support( 'post-thumbnails' );
     add_theme_support( 'title-tag' );
 }
+
+// ── 6. Disable block editor welcome guide ─────────────────────────────────────
+
+add_action( 'enqueue_block_editor_assets', 'headlesswp_disable_editor_welcome_guide' );
+
+/**
+ * Disable the "Welcome to the editor" modal that appears in the block editor.
+ * For a headless CMS, editors are managing structured data, not learning
+ * the full page-building interface.
+ */
+function headlesswp_disable_editor_welcome_guide() {
+    wp_add_inline_script( 'wp-blocks', "
+        wp.data.dispatch('core/edit-post').toggleFeature('welcomeGuide');
+    " );
+}
