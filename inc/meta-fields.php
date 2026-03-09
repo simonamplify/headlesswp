@@ -250,6 +250,14 @@ function headlesswp_enqueue_meta_box_assets( string $hook ): void {
 
     wp_enqueue_media();
 
+    // Enqueue admin meta box styles.
+    wp_enqueue_style(
+        'headlesswp-admin-meta-boxes',
+        HEADLESSWP_URI . '/assets/css/admin-meta-boxes.css',
+        [],
+        HEADLESSWP_VERSION
+    );
+
     // Inline script: open the WP media library when the "Select Logo" button
     // is clicked, restrict to images, and echo the chosen attachment ID/URL
     // back into the hidden input and preview element.
@@ -320,15 +328,6 @@ function headlesswp_render_client_meta_box( WP_Post $post ): void {
         }
     }
     ?>
-    <style>
-        .hwp-field { margin-bottom: 12px; }
-        .hwp-field label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 12px; text-transform: uppercase; color: #3c434a; }
-        .hwp-field input[type="text"],
-        .hwp-field input[type="url"],
-        .hwp-field textarea { width: 100%; box-sizing: border-box; }
-        .hwp-field textarea { min-height: 70px; resize: vertical; }
-    </style>
-
     <div class="hwp-field">
         <label for="_client_name"><?php esc_html_e( 'Client Name', 'headlesswp' ); ?></label>
         <input type="text" id="_client_name" name="_client_name"
@@ -383,14 +382,6 @@ function headlesswp_render_project_meta_box( WP_Post $post ): void {
     $project_url = get_post_meta( $post->ID, '_project_url', true );
     $comment     = get_post_meta( $post->ID, '_project_comment', true );
     ?>
-    <style>
-        .hwp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
-        .hwp-grid .hwp-field { margin-bottom: 12px; }
-        .hwp-services { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; margin-top: 4px; }
-        .hwp-services label { display: flex; align-items: center; gap: 6px; font-weight: normal !important; text-transform: none !important; font-size: 13px !important; color: inherit !important; cursor: pointer; }
-        .hwp-full { grid-column: 1 / -1; }
-    </style>
-
     <div class="hwp-grid">
 
         <div class="hwp-field hwp-full">
@@ -451,16 +442,6 @@ function headlesswp_render_seo_meta_box( WP_Post $post ): void {
     $seo_title       = get_post_meta( $post->ID, '_seo_title', true );
     $seo_description = get_post_meta( $post->ID, '_seo_description', true );
     ?>
-    <style>
-        .hwp-seo-field { margin-bottom: 16px; }
-        .hwp-seo-field label { display: flex; justify-content: space-between; align-items: baseline; font-weight: 600; margin-bottom: 4px; font-size: 12px; text-transform: uppercase; color: #3c434a; }
-        .hwp-seo-field label .hwp-char-count { font-weight: 400; font-size: 11px; text-transform: none; color: #787c82; }
-        .hwp-seo-field label .hwp-char-count.hwp-over { color: #d63638; font-weight: 600; }
-        .hwp-seo-field input[type="text"],
-        .hwp-seo-field textarea { width: 100%; box-sizing: border-box; }
-        .hwp-seo-field textarea { min-height: 70px; resize: vertical; }
-    </style>
-
     <div class="hwp-seo-field">
         <label for="_seo_title">
             <?php esc_html_e( 'Meta Title', 'headlesswp' ); ?>
